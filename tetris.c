@@ -1,55 +1,164 @@
 #include <stdio.h>
+// tetris.c
+// Simulação da fila de peças futuras do jogo "Tetris Stack".
+// Implementa uma fila circular com capacidade fixa e menu para
+// jogar (dequeue) e inserir (enqueue) peças. Peças são geradas
+// automaticamente pela função gerarPeca().
 
-// Desafio Tetris Stack
-// Tema 3 - Integração de Fila e Pilha
-// Este código inicial serve como base para o desenvolvimento do sistema de controle de peças.
-// Use as instruções de cada nível para desenvolver o desafio.
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+// Capacidade fixa da fila (número de peças futuras mantidas)
+#define CAPACIDADE_FILA 5
+
+// Tipos possíveis de peças
+const char TIPOS_PECAS[] = {'I', 'O', 'T', 'L'};
+const int NUM_TIPOS = sizeof(TIPOS_PECAS) / sizeof(TIPOS_PECAS[0]);
+
+// Struct que representa uma peça
+typedef struct {
+    char nome; // 'I', 'O', 'T', 'L'
+    int id;    // identificador único sequencial
+} Peca;
+
+// Fila circular simples
+typedef struct {
+    Peca dados[CAPACIDADE_FILA];
+    int frente; // índice do elemento na frente
+    int tamanho; // número de elementos atualmente na fila
+} Fila;
+
+// Funções da fila
+void inicializarFila(Fila *f) {
+    f->frente = 0;
+    f->tamanho = 0;
+}
+
+int filaVazia(const Fila *f) {
+    return f->tamanho == 0;
+}
+
+int filaCheia(const Fila *f) {
+    return f->tamanho == CAPACIDADE_FILA;
+}
+
+// Insere no final (enqueue). Retorna 1 se sucesso, 0 se cheia.
+int enqueue(Fila *f, Peca p) {
+    if (filaCheia(f)) return 0;
+    int pos = (f->frente + f->tamanho) % CAPACIDADE_FILA;
+    f->dados[pos] = p;
+    f->tamanho++;
+    return 1;
+}
+
+// Remove da frente (dequeue). Retorna 1 se sucesso, 0 se vazia.
+int dequeue(Fila *f, Peca *out) {
+    if (filaVazia(f)) return 0;
+    *out = f->dados[f->frente];
+    f->frente = (f->frente + 1) % CAPACIDADE_FILA;
+    f->tamanho--;
+    return 1;
+}
+
+// Gerador de peças: escolhe um tipo aleatório e atribui um id sequencial
+Peca gerarPeca(int *contadorIds) {
+    Peca p;
+    int idx = rand() % NUM_TIPOS;
+    p.nome = TIPOS_PECAS[idx];
+    p.id = (*contadorIds)++;
+    return p;
+}
+
+// Exibe a fila de forma legível
+void mostrarFila(const Fila *f) {
+    printf("\nFila de peças\n");
+    if (filaVazia(f)) {
+        printf("(vazia)\n");
+        return;
+    }
+    // Imprime do elemento da frente para o final, respeitando circularidade
+    for (int i = 0; i < f->tamanho; ++i) {
+        int idx = (f->frente + i) % CAPACIDADE_FILA;
+        Peca p = f->dados[idx];
+        printf("[%c %d] ", p.nome, p.id);
+    }
+    printf("\n");
+}
+
+// Exibe o menu de ações
+void mostrarMenu() {
+    printf("\nOpções de ação:\n\n");
+    printf("Código\tAção\n");
+    printf("1\tJogar peça (dequeue)\n");
+    printf("2\tInserir nova peça (enqueue)\n");
+    printf("0\tSair\n");
+}
 
 int main() {
+    // seed para geração aleatória
+    srand((unsigned int) time(NULL));
 
-    // 🧩 Nível Novato: Fila de Peças Futuras
-    //
-    // - Crie uma struct Peca com os campos: tipo (char) e id (int).
-    // - Implemente uma fila circular com capacidade para 5 peças.
-    // - Crie funções como inicializarFila(), enqueue(), dequeue(), filaCheia(), filaVazia().
-    // - Cada peça deve ser gerada automaticamente com um tipo aleatório e id sequencial.
-    // - Exiba a fila após cada ação com uma função mostrarFila().
-    // - Use um menu com opções como:
-    //      1 - Jogar peça (remover da frente)
-    //      0 - Sair
-    // - A cada remoção, insira uma nova peça ao final da fila.
+    Fila fila;
+    inicializarFila(&fila);
+    int contadorIds = 0; // gera ids sequenciais
 
+    // Inicializa a fila com CAPACIDADE_FILA peças
+    for (int i = 0; i < CAPACIDADE_FILA; ++i) {
+        Peca p = gerarPeca(&contadorIds);
+        enqueue(&fila, p);
+    }
 
+    int opcao = -1;
+    Peca removida;
 
-    // 🧠 Nível Aventureiro: Adição da Pilha de Reserva
-    //
-    // - Implemente uma pilha linear com capacidade para 3 peças.
-    // - Crie funções como inicializarPilha(), push(), pop(), pilhaCheia(), pilhaVazia().
-    // - Permita enviar uma peça da fila para a pilha (reserva).
-    // - Crie um menu com opção:
-    //      2 - Enviar peça da fila para a reserva (pilha)
-    //      3 - Usar peça da reserva (remover do topo da pilha)
-    // - Exiba a pilha junto com a fila após cada ação com mostrarPilha().
-    // - Mantenha a fila sempre com 5 peças (repondo com gerarPeca()).
+    // Loop do menu
+    while (1) {
+        mostrarFila(&fila);
+        mostrarMenu();
+        printf("\nEscolha uma opção: ");
+        if (scanf("%d", &opcao) != 1) {
+            // entrada inválida, descarta a linha
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF) ;
+            printf("Entrada inválida. Tente novamente.\n");
+            continue;
+        }
 
+        if (opcao == 0) {
+            printf("Saindo...\n");
+            break;
+        }
 
-    // 🔄 Nível Mestre: Integração Estratégica entre Fila e Pilha
-    //
-    // - Implemente interações avançadas entre as estruturas:
-    //      4 - Trocar a peça da frente da fila com o topo da pilha
-    //      5 - Trocar os 3 primeiros da fila com as 3 peças da pilha
-    // - Para a opção 4:
-    //      Verifique se a fila não está vazia e a pilha tem ao menos 1 peça.
-    //      Troque os elementos diretamente nos arrays.
-    // - Para a opção 5:
-    //      Verifique se a pilha tem exatamente 3 peças e a fila ao menos 3.
-    //      Use a lógica de índice circular para acessar os primeiros da fila.
-    // - Sempre valide as condições antes da troca e informe mensagens claras ao usuário.
-    // - Use funções auxiliares, se quiser, para modularizar a lógica de troca.
-    // - O menu deve ficar assim:
-    //      4 - Trocar peça da frente com topo da pilha
-    //      5 - Trocar 3 primeiros da fila com os 3 da pilha
-
+        if (opcao == 1) {
+            // Jogar peça: remove da frente e automaticamente completa com nova peça
+            if (dequeue(&fila, &removida)) {
+                printf("\nJogou a peça: [%c %d]\n", removida.nome, removida.id);
+                // Após remover, sempre reponha para manter a fila cheia
+                Peca nova = gerarPeca(&contadorIds);
+                if (enqueue(&fila, nova)) {
+                    printf("Nova peça inserida automaticamente: [%c %d]\n", nova.nome, nova.id);
+                } else {
+                    // Na prática, essa situação não deve ocorrer porque repondo imediatamente
+                    printf("Falha ao repor peça: fila cheia\n");
+                }
+            } else {
+                printf("Fila vazia. Nada a jogar.\n");
+            }
+        } else if (opcao == 2) {
+            // Inserir nova peça manual (mas peça é gerada automaticamente)
+            if (filaCheia(&fila)) {
+                printf("Fila está cheia. Não é possível inserir nova peça.\n");
+            } else {
+                Peca nova = gerarPeca(&contadorIds);
+                if (enqueue(&fila, nova)) {
+                    printf("Peça inserida: [%c %d]\n", nova.nome, nova.id);
+                }
+            }
+        } else {
+            printf("Opção não reconhecida. Use 0, 1 ou 2.\n");
+        }
+    }
 
     return 0;
 }
